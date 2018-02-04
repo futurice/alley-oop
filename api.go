@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
@@ -9,12 +10,15 @@ import (
 	"strings"
 	"time"
 
+	"alley-oop/autocert"
 	"github.com/julienschmidt/httprouter"
+	"golang.org/x/crypto/acme"
 )
 
 type API struct {
 	Handler http.Handler
 	db      Database
+	certmgr autocert.Manager
 }
 
 var (
@@ -140,11 +144,101 @@ BadRequest:
 	return
 }
 
+func (api *API) v1certificate(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	err := req.ParseForm()
+	if err != nil {
+		fmt.Fprintf(w, "notfqdn")
+		return
+	}
+
+	hostnames := flattenParams(req.Form["hostname"])
+	if hostnames == nil || len(hostnames) != 1 {
+		fmt.Fprintf(w, "notfqdn")
+		return
+	}
+	hostname := hostnames[0]
+	if !hostnameRegexp.MatchString(hostname) {
+		fmt.Fprintf(w, "notfqdn")
+		return
+	}
+
+	hello := &tls.ClientHelloInfo{ServerName: hostname}
+	cert, err := api.certmgr.GetCertificate(hello)
+	if err != nil {
+		fmt.Fprintf(w, "notfqdn")
+		return
+	}
+
+	key, err := getPrivateKey(cert)
+	if err != nil {
+		fmt.Fprintf(w, "notfqdn")
+		return
+	}
+
+	certs, err := getCertificates(cert)
+	if err != nil {
+		fmt.Fprintf(w, "notfqdn")
+		return
+	}
+
+	fmt.Fprintf(w, "private\n")
+	fmt.Fprintf(w, key)
+	fmt.Fprintf(w, "public\n")
+	fmt.Fprintf(w, certs)
+}
+
+type dbTxtHandler struct {
+	Database
+}
+
+func (db dbTxtHandler) PutTXTRecord(ctx context.Context, domain string, value string) {
+	if err := db.PutTXTValues(ctx, domain, []string{value}); err != nil {
+		// FIXME: Handle error
+	}
+}
+
+func (db dbTxtHandler) DeleteTXTRecord(ctx context.Context, domain string) {
+	if err := db.DeleteTXTValues(ctx, domain); err != nil {
+		// FIXME: Handle error
+	}
+}
+
+type dbCertCache struct {
+	Database
+}
+
+func (db dbCertCache) Get(ctx context.Context, name string) ([]byte, error) {
+	b, err := db.GetCertificate(ctx, name)
+	if err == ErrCacheMiss {
+		return nil, autocert.ErrCacheMiss
+	}
+	return b, err
+}
+
+func (db dbCertCache) Put(ctx context.Context, name string, data []byte) error {
+	return db.PutCertificate(ctx, name, data)
+}
+
+func (db dbCertCache) Delete(ctx context.Context, name string) error {
+	return db.DeleteCertificate(ctx, name)
+}
+
 func NewAPI(db Database) *API {
 	api := &API{db: db}
 	router := httprouter.New()
 	router.GET("/", api.index)
 	router.GET("/v1/update", api.v1update)
+	router.GET("/v1/certificate", api.v1certificate)
 	api.Handler = router
+
+	client := &acme.Client{DirectoryURL: "https://acme-staging.api.letsencrypt.org/directory"}
+	manager := autocert.Manager{
+		Client: client,
+		Cache:  dbCertCache{db},
+		Prompt: autocert.AcceptTOS,
+	}
+	manager.DNSHandler(dbTxtHandler{db})
+	api.certmgr = manager
+
 	return api
 }

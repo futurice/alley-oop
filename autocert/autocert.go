@@ -49,6 +49,11 @@ func init() {
 	pseudoRand = &lockedMathRand{rnd: mathrand.New(src)}
 }
 
+type DNSHandler interface {
+	PutTXTRecord(ctx context.Context, domain string, value string)
+	DeleteTXTRecord(ctx context.Context, domain string)
+}
+
 // AcceptTOS is a Manager.Prompt function that always returns true to
 // indicate acceptance of the CA's Terms of Service during account
 // registration.
@@ -162,7 +167,9 @@ type Manager struct {
 	tokensMu sync.RWMutex
 	// tryHTTP01 indicates whether the Manager should try "http-01" challenge type
 	// during the authorization flow.
-	tryHTTP01 bool
+	tryHTTP01  bool
+	tryDNS01   bool
+	dnsHandler DNSHandler
 	// httpTokens contains response body values for http-01 challenges
 	// and is keyed by the URL path at which a challenge response is expected
 	// to be provisioned.
@@ -283,6 +290,14 @@ func (m *Manager) HTTPHandler(fallback http.Handler) http.Handler {
 		}
 		w.Write(data)
 	})
+}
+
+func (m *Manager) DNSHandler(handler DNSHandler) {
+	m.tokensMu.Lock()
+	defer m.tokensMu.Unlock()
+
+	m.tryDNS01 = true
+	m.dnsHandler = handler
 }
 
 func handleHTTPRedirect(w http.ResponseWriter, r *http.Request) {
@@ -553,6 +568,9 @@ func (m *Manager) verify(ctx context.Context, client *acme.Client, domain string
 	if m.tryHTTP01 {
 		challengeTypes = append(challengeTypes, "http-01")
 	}
+	if m.tryDNS01 {
+		challengeTypes = append(challengeTypes, "dns-01")
+	}
 	m.tokensMu.RUnlock()
 
 	var nextTyp int // challengeType index of the next challenge type to try
@@ -580,7 +598,7 @@ func (m *Manager) verify(ctx context.Context, client *acme.Client, domain string
 		if chal == nil {
 			return fmt.Errorf("acme/autocert: unable to authorize %q; tried %q", domain, challengeTypes)
 		}
-		cleanup, err := m.fulfill(ctx, client, chal)
+		cleanup, err := m.fulfill(ctx, client, chal, domain)
 		if err != nil {
 			continue
 		}
@@ -598,7 +616,7 @@ func (m *Manager) verify(ctx context.Context, client *acme.Client, domain string
 
 // fulfill provisions a response to the challenge chal.
 // The cleanup is non-nil only if provisioning succeeded.
-func (m *Manager) fulfill(ctx context.Context, client *acme.Client, chal *acme.Challenge) (cleanup func(), err error) {
+func (m *Manager) fulfill(ctx context.Context, client *acme.Client, chal *acme.Challenge, domain string) (cleanup func(), err error) {
 	switch chal.Type {
 	case "tls-sni-01":
 		cert, name, err := client.TLSSNI01ChallengeCert(chal.Token)
@@ -622,6 +640,13 @@ func (m *Manager) fulfill(ctx context.Context, client *acme.Client, chal *acme.C
 		p := client.HTTP01ChallengePath(chal.Token)
 		m.putHTTPToken(ctx, p, resp)
 		return func() { go m.deleteHTTPToken(p) }, nil
+	case "dns-01":
+		record, err := client.DNS01ChallengeRecord(chal.Token)
+		if err != nil {
+			return nil, err
+		}
+		m.putDNSToken(ctx, domain, record)
+		return func() { go m.deleteDNSToken(ctx, domain) }, nil
 	}
 	return nil, fmt.Errorf("acme/autocert: unknown challenge type %q", chal.Type)
 }
@@ -706,6 +731,16 @@ func (m *Manager) deleteHTTPToken(tokenPath string) {
 // in the Manager's optional Cache.
 func httpTokenCacheKey(tokenPath string) string {
 	return "http-01-" + path.Base(tokenPath)
+}
+
+func (m *Manager) putDNSToken(ctx context.Context, domain string, record string) {
+	fullDomain := fmt.Sprintf("_acme-challenge.%s", domain)
+	m.dnsHandler.PutTXTRecord(ctx, fullDomain, record)
+}
+
+func (m *Manager) deleteDNSToken(ctx context.Context, domain string) {
+	fullDomain := fmt.Sprintf("_acme-challenge.%s", domain)
+	m.dnsHandler.DeleteTXTRecord(ctx, fullDomain)
 }
 
 // renew starts a cert renewal timer loop, one per domain.

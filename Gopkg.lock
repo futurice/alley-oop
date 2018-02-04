@@ -8,14 +8,36 @@
   revision = "f9305388177fe574dd6b05d8dd1670f5056ecd50"
 
 [[projects]]
+  name = "github.com/miekg/dns"
+  packages = ["."]
+  revision = "5364553f1ee9cddc7ac8b62dce148309c386695b"
+  version = "v1.0.4"
+
+[[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["acme"]
+  packages = [
+    "acme",
+    "ed25519",
+    "ed25519/internal/edwards25519"
+  ]
   revision = "1875d0a70c90e57f11972aefd42276df65e895b9"
+
+[[projects]]
+  branch = "master"
+  name = "golang.org/x/net"
+  packages = [
+    "bpf",
+    "internal/iana",
+    "internal/socket",
+    "ipv4",
+    "ipv6"
+  ]
+  revision = "309822c5b9b9f80db67f016069a12628d94fad34"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7a433a5071d6b43096f6edb4cee44be5c9b665b3e76a6127a2b4391d2fa265c0"
+  inputs-digest = "6264b166871672a4009a31b06b78dc3ae3997a21f8219db9845033c9c6f7bd50"
   solver-name = "gps-cdcl"
   solver-version = 1

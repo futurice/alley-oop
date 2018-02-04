@@ -47,6 +47,11 @@ func main() {
 		fmt.Printf("Starting server at http://localhost:80.\n")
 		log.Fatal(http.ListenAndServe(":80", handler))
 	}()
+
+	go func() {
+		startDNS(domain, []string{domain})
+	}()
+
 	fmt.Printf("Starting server at http://localhost:443.\n")
 	log.Fatal(srv.ListenAndServeTLS("", ""))
 }

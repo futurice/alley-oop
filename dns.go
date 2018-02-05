@@ -76,11 +76,11 @@ func getHandler(domain string, nameservers []string) func(dns.ResponseWriter, *d
 	}
 }
 
-func startDNS(domainstr string, nsstrs []string) {
-	domain := dns.Fqdn(domainstr)
+func startDNS(config dnsConfig) {
+	domain := dns.Fqdn(config.Domain)
 
 	var nsfqdns []string
-	for _, nsstr := range nsstrs {
+	for _, nsstr := range config.NameServers {
 		nsfqdns = append(nsfqdns, dns.Fqdn(nsstr))
 	}
 

@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  revision = "b26d9c308763d68093482582cea63d69be07a0f0"
+  version = "v0.3.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/jvah/alley-oop"
   packages = ["autocert"]
@@ -38,6 +44,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6264b166871672a4009a31b06b78dc3ae3997a21f8219db9845033c9c6f7bd50"
+  inputs-digest = "c035897e144cf96cb80505464113b0a1dd270806efb1e7c3dea57feffa33cdfc"
   solver-name = "gps-cdcl"
   solver-version = 1

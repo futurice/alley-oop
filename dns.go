@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
+	"time"
 
 	"github.com/miekg/dns"
 )
@@ -24,7 +26,7 @@ func getMockAAAARecord(domain string) dns.RR {
 	}
 }
 
-func processQuery(msg *dns.Msg, ns []dns.RR) {
+func processQuery(msg *dns.Msg, soa dns.RR, ns []dns.RR) {
 	// Multiple questions are never used in practice
 	q := msg.Question[0]
 
@@ -38,12 +40,13 @@ func processQuery(msg *dns.Msg, ns []dns.RR) {
 		msg.Ns = ns
 		msg.Answer = append(msg.Answer, getMockAAAARecord(q.Name))
 	default:
-		// FIXME: Add RcodeNameError response with SOA in authority section
+		msg.Authoritative = true
+		msg.Ns = []dns.RR{soa}
 	}
 }
 
-func getHandler(subdomain string, nameservers []string) func(dns.ResponseWriter, *dns.Msg) {
-	nshdr := dns.RR_Header{Name: subdomain, Rrtype: dns.TypeNS, Class: dns.ClassINET, Ttl: 3600}
+func getHandler(domain string, nameservers []string) func(dns.ResponseWriter, *dns.Msg) {
+	nshdr := dns.RR_Header{Name: domain, Rrtype: dns.TypeNS, Class: dns.ClassINET, Ttl: 3600}
 
 	var nsrr []dns.RR
 	for _, ns := range nameservers {
@@ -53,21 +56,35 @@ func getHandler(subdomain string, nameservers []string) func(dns.ResponseWriter,
 		nsrr = append(nsrr, rr)
 	}
 
+	SOAFormat := fmt.Sprintf("%s SOA %s %s %%s 28800 7200 604800 86400", strings.ToLower(domain), strings.ToLower(nameservers[0]), "admin.domain.foo")
+
 	return func(w dns.ResponseWriter, req *dns.Msg) {
+		serial := time.Now().Format("2006010215")
+		SOAString := fmt.Sprintf(SOAFormat, serial)
+		SOA, err := dns.NewRR(SOAString)
+		if err != nil {
+			// FIXME: Handle error, should not happen
+		}
+
 		msg := new(dns.Msg)
 		msg.SetReply(req)
 
 		if req.Opcode == dns.OpcodeQuery {
-			processQuery(msg, nsrr)
+			processQuery(msg, SOA, nsrr)
 		}
 		w.WriteMsg(msg)
 	}
 }
 
-func startDNS(subdomain string, nameservers []string) {
-	domain := dns.Fqdn(subdomain)
+func startDNS(domainstr string, nsstrs []string) {
+	domain := dns.Fqdn(domainstr)
 
-	dns.HandleFunc(domain, getHandler(domain, nameservers))
+	var nsfqdns []string
+	for _, nsstr := range nsstrs {
+		nsfqdns = append(nsfqdns, dns.Fqdn(nsstr))
+	}
+
+	dns.HandleFunc(domain, getHandler(domain, nsfqdns))
 	server := &dns.Server{Addr: ":53", Net: "udp"}
 
 	fmt.Printf("Starting DNS server at localhost:53\n")

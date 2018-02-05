@@ -41,6 +41,10 @@ func processQuery(msg *dns.Msg, soa dns.RR, ns []dns.RR) {
 		msg.Answer = append(msg.Answer, getMockAAAARecord(q.Name))
 	default:
 		msg.Authoritative = true
+		if false {
+			// FIXME: Only in case the domain is not configured
+			msg.Rcode = dns.RcodeNameError
+		}
 		msg.Ns = []dns.RR{soa}
 	}
 }

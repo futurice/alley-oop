@@ -33,7 +33,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	handler := getApiHandler()
+	db := &MemoryDatabase{}
+	api := NewAPI(db)
+	handler := api.Handler
 
 	m := autocert.Manager{
 		Cache:      autocert.DirCache("api-certs"),
@@ -56,7 +58,7 @@ func main() {
 	}()
 
 	go func() {
-		startDNS(config.DNS)
+		startDNS(db, config.DNS)
 	}()
 
 	fmt.Printf("Starting server at http://localhost:443.\n")

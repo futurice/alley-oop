@@ -26,22 +26,62 @@ func getMockAAAARecord(domain string) dns.RR {
 	}
 }
 
-func processQuery(msg *dns.Msg, soa dns.RR, ns []dns.RR) {
+func isIPv4(addr net.IP) bool {
+	return strings.Contains(addr.String(), ".")
+}
+
+func getDomain(domain string) string {
+	if dns.IsFqdn(domain) {
+		return domain[0 : len(domain)-1]
+	} else {
+		return domain
+	}
+}
+
+func getRecords(db Database, fqdn string, rrtype uint16) []dns.RR {
+	var records []dns.RR
+
+	ipaddrs, _ := db.GetIPAddresses(nil, getDomain(fqdn))
+	switch rrtype {
+	case dns.TypeA:
+		// FIXME: handle ctx and error
+		for _, ip := range ipaddrs {
+			if isIPv4(ip) {
+				str := fmt.Sprintf("%s 3600 IN A %s", fqdn, ip.String())
+				rr, _ := dns.NewRR(str)
+				records = append(records, rr)
+			}
+		}
+	case dns.TypeAAAA:
+		for _, ip := range ipaddrs {
+			if !isIPv4(ip) {
+				str := fmt.Sprintf("%s 3600 IN AAAA %s", fqdn, ip.String())
+				rr, _ := dns.NewRR(str)
+				records = append(records, rr)
+			}
+		}
+	}
+	return records
+}
+
+func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) {
 
 	// Multiple questions are never used in practice
 	q := msg.Question[0]
 
-	domainRecords := getDomainRecords(q.Name)
-	answer := domainRecords[q.Qtype]
+	//domainRecords := getDomainRecords(q.Name)
+	answer := getRecords(db, q.Name, q.Qtype)
 
 	if len(answer) == 0 {
 		// Default response is authoritative with SOA
 		msg.Authoritative = true
 		msg.Ns = []dns.RR{soa}
-		if len(domainRecords) == 0 {
-			// No records for the whole domain
-			msg.Rcode = dns.RcodeNameError
-		}
+		/*
+			if len(domainRecords) == 0 {
+				// No records for the whole domain
+				msg.Rcode = dns.RcodeNameError
+			}
+		*/
 		return
 	}
 
@@ -53,7 +93,7 @@ func processQuery(msg *dns.Msg, soa dns.RR, ns []dns.RR) {
 	}
 }
 
-func getHandler(domain string, nameservers []string) func(dns.ResponseWriter, *dns.Msg) {
+func getHandler(db Database, domain string, nameservers []string) func(dns.ResponseWriter, *dns.Msg) {
 	nshdr := dns.RR_Header{Name: domain, Rrtype: dns.TypeNS, Class: dns.ClassINET, Ttl: 3600}
 
 	var nsrr []dns.RR
@@ -78,13 +118,13 @@ func getHandler(domain string, nameservers []string) func(dns.ResponseWriter, *d
 		msg.SetReply(req)
 
 		if req.Opcode == dns.OpcodeQuery {
-			processQuery(msg, SOA, nsrr)
+			processQuery(db, msg, SOA, nsrr)
 		}
 		w.WriteMsg(msg)
 	}
 }
 
-func startDNS(config dnsConfig) {
+func startDNS(db Database, config dnsConfig) {
 	domain := dns.Fqdn(config.Domain)
 
 	var nsfqdns []string
@@ -92,7 +132,7 @@ func startDNS(config dnsConfig) {
 		nsfqdns = append(nsfqdns, dns.Fqdn(nsstr))
 	}
 
-	dns.HandleFunc(domain, getHandler(domain, nsfqdns))
+	dns.HandleFunc(domain, getHandler(db, domain, nsfqdns))
 	server := &dns.Server{Addr: ":53", Net: "udp"}
 
 	fmt.Printf("Starting DNS server at localhost:53\n")

@@ -10,13 +10,14 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
+type API struct {
+	Handler http.Handler
+	db      Database
+}
+
 var (
 	hostnameRegexp = regexp.MustCompile("^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$")
 )
-
-func index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	fmt.Fprintf(w, "Hello, world! You should be now using HTTPS!\n")
-}
 
 func flattenParams(params []string) []string {
 	var flattened []string
@@ -32,18 +33,43 @@ func flattenParams(params []string) []string {
 	return flattened
 }
 
-func v1update(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func haveAddressesChanged(original []net.IP, updated []net.IP) bool {
+	var (
+		originalMap = make(map[string]bool)
+		updatedMap  = make(map[string]bool)
+	)
+
+	for _, ip := range original {
+		originalMap[ip.String()] = true
+	}
+	for _, ip := range updated {
+		updatedMap[ip.String()] = true
+	}
+	if len(originalMap) != len(updatedMap) {
+		return true
+	}
+	for ipstr, _ := range updatedMap {
+		if !originalMap[ipstr] {
+			return true
+		}
+	}
+	return false
+}
+
+func (api *API) index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	fmt.Fprintf(w, "Hello, world! You should be now using HTTPS!\n")
+}
+
+func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	var (
 		hostnames []string
 		myips     []string
-		ipv4s     []net.IP
-		ipv6s     []net.IP
+		ips       []net.IP
 	)
 
 	err := req.ParseForm()
 	if err != nil {
 		goto BadRequest
-		// FIXME: Handle form parsing error
 	}
 
 	hostnames = flattenParams(req.Form["hostname"])
@@ -61,10 +87,8 @@ func v1update(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 		ip := net.ParseIP(myip)
 		if ip == nil {
 			goto BadRequest
-		} else if ip.To4() != nil {
-			ipv4s = append(ipv4s, ip)
-		} else if ip.To16() != nil {
-			ipv6s = append(ipv6s, ip)
+		} else if ip.To4() != nil || ip.To16() != nil {
+			ips = append(ips, ip)
 		} else {
 			goto BadRequest
 		}
@@ -79,22 +103,19 @@ func v1update(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 			continue
 		}
 
-		// FIXME: update IPs
-		changed := true
+		// FIXME: Handle context, handle error
+		origips, _ := api.db.GetIPAddresses(nil, hostname)
+		changed := haveAddressesChanged(origips, ips)
+		// FIXME: Handle context, handle error
+		api.db.PutIPAddresses(nil, hostname, ips)
 
 		if changed {
 			fmt.Fprintf(w, "good ")
 		} else {
 			fmt.Fprintf(w, "nochg ")
 		}
-		for idx, ip := range ipv4s {
+		for idx, ip := range ips {
 			if idx != 0 {
-				fmt.Fprintf(w, ",")
-			}
-			fmt.Fprintf(w, ip.String())
-		}
-		for idx, ip := range ipv6s {
-			if len(ipv4s) != 0 || idx != 0 {
 				fmt.Fprintf(w, ",")
 			}
 			fmt.Fprintf(w, ip.String())
@@ -107,9 +128,11 @@ BadRequest:
 	return
 }
 
-func getApiHandler() http.Handler {
+func NewAPI(db Database) *API {
+	api := &API{db: db}
 	router := httprouter.New()
-	router.GET("/", index)
-	router.GET("/v1/update", v1update)
-	return router
+	router.GET("/", api.index)
+	router.GET("/v1/update", api.v1update)
+	api.Handler = router
+	return api
 }

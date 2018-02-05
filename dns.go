@@ -27,25 +27,29 @@ func getMockAAAARecord(domain string) dns.RR {
 }
 
 func processQuery(msg *dns.Msg, soa dns.RR, ns []dns.RR) {
+
 	// Multiple questions are never used in practice
 	q := msg.Question[0]
 
-	switch q.Qtype {
-	case dns.TypeA:
+	domainRecords := getDomainRecords(q.Name)
+	answer := domainRecords[q.Qtype]
+
+	if len(answer) == 0 {
+		// Default response is authoritative with SOA
 		msg.Authoritative = true
-		msg.Ns = ns
-		msg.Answer = append(msg.Answer, getMockARecord(q.Name))
-	case dns.TypeAAAA:
-		msg.Authoritative = true
-		msg.Ns = ns
-		msg.Answer = append(msg.Answer, getMockAAAARecord(q.Name))
-	default:
-		msg.Authoritative = true
-		if false {
-			// FIXME: Only in case the domain is not configured
+		msg.Ns = []dns.RR{soa}
+		if len(domainRecords) == 0 {
+			// No records for the whole domain
 			msg.Rcode = dns.RcodeNameError
 		}
-		msg.Ns = []dns.RR{soa}
+		return
+	}
+
+	switch q.Qtype {
+	case dns.TypeA, dns.TypeAAAA:
+		msg.Authoritative = true
+		msg.Ns = ns
+		msg.Answer = answer
 	}
 }
 

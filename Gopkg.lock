@@ -8,6 +8,12 @@
   version = "v0.3.0"
 
 [[projects]]
+  name = "github.com/julienschmidt/httprouter"
+  packages = ["."]
+  revision = "8c199fb6259ffc1af525cc3ad52ee60ba8359669"
+  version = "v1.1"
+
+[[projects]]
   branch = "master"
   name = "github.com/jvah/alley-oop"
   packages = ["autocert"]
@@ -44,6 +50,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c035897e144cf96cb80505464113b0a1dd270806efb1e7c3dea57feffa33cdfc"
+  inputs-digest = "3949f815c84f5c4b2e1707c603aa395a0494e3615298ef88a4d31d0e9b7ec38e"
   solver-name = "gps-cdcl"
   solver-version = 1

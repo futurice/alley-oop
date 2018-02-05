@@ -11,13 +11,6 @@ import (
 	"github.com/jvah/alley-oop/autocert"
 )
 
-type HelloWorldHandler struct {
-}
-
-func (h *HelloWorldHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello, world! You should be now using HTTPS!\n")
-}
-
 func fileExists(fname string) bool {
 	_, err := os.Stat(fname)
 	return err == nil
@@ -40,9 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	mux := http.NewServeMux()
-	hwh := &HelloWorldHandler{}
-	mux.Handle("/", hwh)
+	handler := getApiHandler()
 
 	m := autocert.Manager{
 		Cache:      autocert.DirCache("api-certs"),
@@ -55,11 +46,11 @@ func main() {
 	}
 	srv := &http.Server{
 		TLSConfig: cfg,
-		Handler:   mux,
+		Handler:   handler,
 	}
 
 	go func() {
-		handler := m.HTTPHandler(nil)
+		handler := m.HTTPHandler(handler)
 		fmt.Printf("Starting server at http://localhost:80.\n")
 		log.Fatal(http.ListenAndServe(":80", handler))
 	}()

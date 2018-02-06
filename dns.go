@@ -19,20 +19,19 @@ func isIPv4(addr net.IP) bool {
 
 func getDomain(domain string) string {
 	if dns.IsFqdn(domain) {
-		return domain[0 : len(domain)-1]
-	} else {
-		return domain
+		domain = domain[0:len(domain)-1]
 	}
+	return strings.ToLower(domain)
 }
 
-func getARecords(domain string, ipaddrs []net.IP) ([]dns.RR, error) {
+func getARecords(fqdn string, ipaddrs []net.IP) ([]dns.RR, error) {
 	var records []dns.RR
 	for _, ip := range ipaddrs {
 		if !isIPv4(ip) {
 			// We just skip all the IPv6 addresses
 			continue
 		}
-		str := fmt.Sprintf("%s. 0 IN A %s", domain, ip.String())
+		str := fmt.Sprintf("%s 0 IN A %s", fqdn, ip.String())
 		rr, err := dns.NewRR(str)
 		if err != nil {
 			return nil, err
@@ -42,14 +41,14 @@ func getARecords(domain string, ipaddrs []net.IP) ([]dns.RR, error) {
 	return records, nil
 }
 
-func getAAAARecords(domain string, ipaddrs []net.IP) ([]dns.RR, error) {
+func getAAAARecords(fqdn string, ipaddrs []net.IP) ([]dns.RR, error) {
 	var records []dns.RR
 	for _, ip := range ipaddrs {
 		if isIPv4(ip) {
 			// We just skip all the IPv4 addresses
 			continue
 		}
-		str := fmt.Sprintf("%s. 0 IN AAAA %s", domain, ip.String())
+		str := fmt.Sprintf("%s 0 IN AAAA %s", fqdn, ip.String())
 		rr, err := dns.NewRR(str)
 		if err != nil {
 			return nil, err
@@ -59,10 +58,10 @@ func getAAAARecords(domain string, ipaddrs []net.IP) ([]dns.RR, error) {
 	return records, nil
 }
 
-func getTXTRecords(domain string, values []string) ([]dns.RR, error) {
+func getTXTRecords(fqdn string, values []string) ([]dns.RR, error) {
 	var records []dns.RR
 	for _, val := range values {
-		str := fmt.Sprintf("%s. 0 IN TXT %s", domain, val)
+		str := fmt.Sprintf("%s 0 IN TXT %s", fqdn, val)
 		rr, err := dns.NewRR(str)
 		if err != nil {
 			return nil, err
@@ -96,9 +95,9 @@ func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
 			return err
 		}
 		if q.Qtype == dns.TypeA {
-			answer, err = getARecords(domain, ipaddrs)
+			answer, err = getARecords(q.Name, ipaddrs)
 		} else {
-			answer, err = getAAAARecords(domain, ipaddrs)
+			answer, err = getAAAARecords(q.Name, ipaddrs)
 		}
 		if err != nil {
 			return err
@@ -108,7 +107,7 @@ func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
 		if err != nil {
 			return err
 		}
-		answer, err = getTXTRecords(domain, txtvals)
+		answer, err = getTXTRecords(q.Name, txtvals)
 		if err != nil {
 			return err
 		}

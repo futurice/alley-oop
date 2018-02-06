@@ -32,7 +32,7 @@ func getARecords(domain string, ipaddrs []net.IP) ([]dns.RR, error) {
 			// We just skip all the IPv6 addresses
 			continue
 		}
-		str := fmt.Sprintf("%s. 3600 IN A %s", domain, ip.String())
+		str := fmt.Sprintf("%s. 0 IN A %s", domain, ip.String())
 		rr, err := dns.NewRR(str)
 		if err != nil {
 			return nil, err
@@ -49,7 +49,7 @@ func getAAAARecords(domain string, ipaddrs []net.IP) ([]dns.RR, error) {
 			// We just skip all the IPv4 addresses
 			continue
 		}
-		str := fmt.Sprintf("%s. 3600 IN AAAA %s", domain, ip.String())
+		str := fmt.Sprintf("%s. 0 IN AAAA %s", domain, ip.String())
 		rr, err := dns.NewRR(str)
 		if err != nil {
 			return nil, err
@@ -62,7 +62,7 @@ func getAAAARecords(domain string, ipaddrs []net.IP) ([]dns.RR, error) {
 func getTXTRecords(domain string, values []string) ([]dns.RR, error) {
 	var records []dns.RR
 	for _, val := range values {
-		str := fmt.Sprintf("%s. 3600 IN TXT %s", domain, val)
+		str := fmt.Sprintf("%s. 0 IN TXT %s", domain, val)
 		rr, err := dns.NewRR(str)
 		if err != nil {
 			return nil, err

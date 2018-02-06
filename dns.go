@@ -13,20 +13,6 @@ import (
 
 const SOAString string = "@ SOA prisoner.iana.org. hostmaster.root-servers.org. 2002040800 1800 900 0604800 604800"
 
-func getMockARecord(domain string) dns.RR {
-	return &dns.A{
-		Hdr: dns.RR_Header{Name: domain, Rrtype: dns.TypeA, Class: dns.ClassINET, Ttl: 300},
-		A:   net.ParseIP("127.0.0.1"),
-	}
-}
-
-func getMockAAAARecord(domain string) dns.RR {
-	return &dns.AAAA{
-		Hdr:  dns.RR_Header{Name: domain, Rrtype: dns.TypeAAAA, Class: dns.ClassINET, Ttl: 300},
-		AAAA: net.ParseIP("::1"),
-	}
-}
-
 func isIPv4(addr net.IP) bool {
 	return strings.Contains(addr.String(), ".")
 }

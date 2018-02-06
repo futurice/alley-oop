@@ -113,13 +113,14 @@ func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.
 			continue
 		}
 
-		origips, err := api.db.GetIPAddresses(ctx, hostname)
+		domain := strings.ToLower(hostname)
+		origips, err := api.db.GetIPAddresses(ctx, domain)
 		if err != nil {
 			fmt.Fprintf(w, "dnserr")
 			continue
 		}
 		changed := haveAddressesChanged(origips, ips)
-		err = api.db.PutIPAddresses(ctx, hostname, ips)
+		err = api.db.PutIPAddresses(ctx, domain, ips)
 		if err != nil {
 			fmt.Fprintf(w, "dnserr")
 			continue

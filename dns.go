@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net"
@@ -38,16 +39,20 @@ func getDomain(domain string) string {
 	}
 }
 
-func getRecords(db Database, fqdn string, rrtype uint16) []dns.RR {
+func getRecords(ctx context.Context, db Database, domain string, rrtype uint16) ([]dns.RR, error) {
 	var records []dns.RR
 
-	ipaddrs, _ := db.GetIPAddresses(nil, getDomain(fqdn))
+	ipaddrs, err := db.GetIPAddresses(ctx, domain)
+	if err != nil {
+		return nil, err
+	}
+
 	switch rrtype {
 	case dns.TypeA:
 		// FIXME: handle ctx and error
 		for _, ip := range ipaddrs {
 			if isIPv4(ip) {
-				str := fmt.Sprintf("%s 3600 IN A %s", fqdn, ip.String())
+				str := fmt.Sprintf("%s. 3600 IN A %s", domain, ip.String())
 				rr, _ := dns.NewRR(str)
 				records = append(records, rr)
 			}
@@ -55,34 +60,43 @@ func getRecords(db Database, fqdn string, rrtype uint16) []dns.RR {
 	case dns.TypeAAAA:
 		for _, ip := range ipaddrs {
 			if !isIPv4(ip) {
-				str := fmt.Sprintf("%s 3600 IN AAAA %s", fqdn, ip.String())
+				str := fmt.Sprintf("%s. 3600 IN AAAA %s", domain, ip.String())
 				rr, _ := dns.NewRR(str)
 				records = append(records, rr)
 			}
 		}
 	}
-	return records
+	return records, nil
 }
 
-func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) {
+func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
 
 	// Multiple questions are never used in practice
 	q := msg.Question[0]
 
-	//domainRecords := getDomainRecords(q.Name)
-	answer := getRecords(db, q.Name, q.Qtype)
+	// Use 1 second timeout for the database queries to avoid stalling
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	domain := getDomain(q.Name)
+	domainExists, err := db.DoesDomainExist(ctx, domain)
+	if err != nil {
+		return err
+	}
+	answer, err := getRecords(ctx, db, domain, q.Qtype)
+	if err != nil {
+		return err
+	}
 
 	if len(answer) == 0 {
 		// Default response is authoritative with SOA
 		msg.Authoritative = true
 		msg.Ns = []dns.RR{soa}
-		/*
-			if len(domainRecords) == 0 {
-				// No records for the whole domain
-				msg.Rcode = dns.RcodeNameError
-			}
-		*/
-		return
+		if !domainExists {
+			// No records for the whole domain
+			msg.Rcode = dns.RcodeNameError
+		}
+		return nil
 	}
 
 	switch q.Qtype {
@@ -91,6 +105,7 @@ func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) {
 		msg.Ns = ns
 		msg.Answer = answer
 	}
+	return nil
 }
 
 func getHandler(db Database, domain string, nameservers []string) func(dns.ResponseWriter, *dns.Msg) {

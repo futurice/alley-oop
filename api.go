@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -67,6 +69,10 @@ func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.
 		ips       []net.IP
 	)
 
+	// Use timeout of 10 seconds, should be enough for all needed updates
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
 	err := req.ParseForm()
 	if err != nil {
 		goto BadRequest
@@ -75,6 +81,10 @@ func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.
 	hostnames = flattenParams(req.Form["hostname"])
 	if hostnames == nil {
 		fmt.Fprintf(w, "notfqdn")
+		return
+	}
+	if len(hostnames) > 20 {
+		fmt.Fprintf(w, "numhost")
 		return
 	}
 
@@ -103,11 +113,17 @@ func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.
 			continue
 		}
 
-		// FIXME: Handle context, handle error
-		origips, _ := api.db.GetIPAddresses(nil, hostname)
+		origips, err := api.db.GetIPAddresses(ctx, hostname)
+		if err != nil {
+			fmt.Fprintf(w, "dnserr")
+			continue
+		}
 		changed := haveAddressesChanged(origips, ips)
-		// FIXME: Handle context, handle error
-		api.db.PutIPAddresses(nil, hostname, ips)
+		err = api.db.PutIPAddresses(ctx, hostname, ips)
+		if err != nil {
+			fmt.Fprintf(w, "dnserr")
+			continue
+		}
 
 		if changed {
 			fmt.Fprintf(w, "good ")

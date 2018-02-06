@@ -6,17 +6,19 @@ import (
 )
 
 type Database interface {
-	GetIPAddresses(ctx context.Context, fqdn string) ([]net.IP, error)
-	PutIPAddresses(ctx context.Context, fqdn string, addresses []net.IP) error
-	DeleteIPAddresses(ctx context.Context, fqdn string) error
+	DoesDomainExist(ctx context.Context, domain string) (bool, error)
 
-	GetTXTValues(ctx context.Context, fqdn string) ([]string, error)
-	PutTXTValues(ctx context.Context, fqdn string, values []string) error
-	DeleteTXTValues(ctx context.Context, fqdn string) error
+	GetIPAddresses(ctx context.Context, domain string) ([]net.IP, error)
+	PutIPAddresses(ctx context.Context, domain string, addresses []net.IP) error
+	DeleteIPAddresses(ctx context.Context, domain string) error
 
-	GetCertificate(ctx context.Context, fqdn string) ([]byte, error)
-	PutCertificate(ctx context.Context, fqdn string, data []byte) error
-	DeleteCertificate(ctx context.Context, fqdn string) error
+	GetTXTValues(ctx context.Context, domain string) ([]string, error)
+	PutTXTValues(ctx context.Context, domain string, values []string) error
+	DeleteTXTValues(ctx context.Context, domain string) error
+
+	GetCertificate(ctx context.Context, name string) ([]byte, error)
+	PutCertificate(ctx context.Context, name string, data []byte) error
+	DeleteCertificate(ctx context.Context, name string) error
 }
 
 type AlleyOopConfig struct {

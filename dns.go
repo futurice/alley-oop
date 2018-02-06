@@ -39,37 +39,57 @@ func getDomain(domain string) string {
 	}
 }
 
-func getRecords(ctx context.Context, db Database, domain string, rrtype uint16) ([]dns.RR, error) {
+func getARecords(domain string, ipaddrs []net.IP) ([]dns.RR, error) {
 	var records []dns.RR
-
-	ipaddrs, err := db.GetIPAddresses(ctx, domain)
-	if err != nil {
-		return nil, err
+	for _, ip := range ipaddrs {
+		if !isIPv4(ip) {
+			// We just skip all the IPv6 addresses
+			continue
+		}
+		str := fmt.Sprintf("%s. 3600 IN A %s", domain, ip.String())
+		rr, err := dns.NewRR(str)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, rr)
 	}
+	return records, nil
+}
 
-	switch rrtype {
-	case dns.TypeA:
-		// FIXME: handle ctx and error
-		for _, ip := range ipaddrs {
-			if isIPv4(ip) {
-				str := fmt.Sprintf("%s. 3600 IN A %s", domain, ip.String())
-				rr, _ := dns.NewRR(str)
-				records = append(records, rr)
-			}
+func getAAAARecords(domain string, ipaddrs []net.IP) ([]dns.RR, error) {
+	var records []dns.RR
+	for _, ip := range ipaddrs {
+		if isIPv4(ip) {
+			// We just skip all the IPv4 addresses
+			continue
 		}
-	case dns.TypeAAAA:
-		for _, ip := range ipaddrs {
-			if !isIPv4(ip) {
-				str := fmt.Sprintf("%s. 3600 IN AAAA %s", domain, ip.String())
-				rr, _ := dns.NewRR(str)
-				records = append(records, rr)
-			}
+		str := fmt.Sprintf("%s. 3600 IN AAAA %s", domain, ip.String())
+		rr, err := dns.NewRR(str)
+		if err != nil {
+			return nil, err
 		}
+		records = append(records, rr)
+	}
+	return records, nil
+}
+
+func getTXTRecords(domain string, values []string) ([]dns.RR, error) {
+	var records []dns.RR
+	for _, val := range values {
+		str := fmt.Sprintf("%s. 3600 IN TXT %s", domain, val)
+		rr, err := dns.NewRR(str)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, rr)
 	}
 	return records, nil
 }
 
 func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
+	var (
+		answer []dns.RR
+	)
 
 	// Multiple questions are never used in practice
 	q := msg.Question[0]
@@ -83,9 +103,29 @@ func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
 	if err != nil {
 		return err
 	}
-	answer, err := getRecords(ctx, db, domain, q.Qtype)
-	if err != nil {
-		return err
+
+	if q.Qtype == dns.TypeA || q.Qtype == dns.TypeAAAA {
+		ipaddrs, err := db.GetIPAddresses(ctx, domain)
+		if err != nil {
+			return err
+		}
+		if q.Qtype == dns.TypeA {
+			answer, err = getARecords(domain, ipaddrs)
+		} else {
+			answer, err = getAAAARecords(domain, ipaddrs)
+		}
+		if err != nil {
+			return err
+		}
+	} else if q.Qtype == dns.TypeTXT {
+		txtvals, err := db.GetTXTValues(ctx, domain)
+		if err != nil {
+			return err
+		}
+		answer, err = getTXTRecords(domain, txtvals)
+		if err != nil {
+			return err
+		}
 	}
 
 	if len(answer) == 0 {
@@ -99,12 +139,10 @@ func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
 		return nil
 	}
 
-	switch q.Qtype {
-	case dns.TypeA, dns.TypeAAAA:
-		msg.Authoritative = true
-		msg.Ns = ns
-		msg.Answer = answer
-	}
+	// Send a successful response with an answer
+	msg.Authoritative = true
+	msg.Ns = ns
+	msg.Answer = answer
 	return nil
 }
 
@@ -133,7 +171,9 @@ func getHandler(db Database, domain string, nameservers []string) func(dns.Respo
 		msg.SetReply(req)
 
 		if req.Opcode == dns.OpcodeQuery {
-			processQuery(db, msg, SOA, nsrr)
+			if err := processQuery(db, msg, SOA, nsrr); err != nil {
+				// FIXME: Handle ServFail
+			}
 		}
 		w.WriteMsg(msg)
 	}

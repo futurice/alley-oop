@@ -115,22 +115,17 @@ func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.
 
 		domain := strings.ToLower(hostname)
 		origips, err := api.db.GetIPAddresses(ctx, domain)
-		if err != nil {
-			fmt.Fprintf(w, "dnserr")
-			continue
+		if err == nil && !haveAddressesChanged(origips, ips) {
+			fmt.Fprintf(w, "nochg ")
+		} else {
+			fmt.Fprintf(w, "good ")
 		}
-		changed := haveAddressesChanged(origips, ips)
 		err = api.db.PutIPAddresses(ctx, domain, ips)
 		if err != nil {
 			fmt.Fprintf(w, "dnserr")
 			continue
 		}
 
-		if changed {
-			fmt.Fprintf(w, "good ")
-		} else {
-			fmt.Fprintf(w, "nochg ")
-		}
 		for idx, ip := range ips {
 			if idx != 0 {
 				fmt.Fprintf(w, ",")

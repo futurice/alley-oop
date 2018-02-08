@@ -19,7 +19,7 @@ func isIPv4(addr net.IP) bool {
 
 func getDomain(domain string) string {
 	if dns.IsFqdn(domain) {
-		domain = domain[0:len(domain)-1]
+		domain = domain[0 : len(domain)-1]
 	}
 	return strings.ToLower(domain)
 }

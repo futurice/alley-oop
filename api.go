@@ -144,46 +144,73 @@ BadRequest:
 	return
 }
 
-func (api *API) v1certificate(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+func (api *API) v1privatekey(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
 	err := req.ParseForm()
 	if err != nil {
-		fmt.Fprintf(w, "notfqdn")
+		http.Error(w, "parse error", http.StatusInternalServerError)
+	}
+
+	hostnames := req.Form["hostname"]
+	if len(hostnames) != 1 {
+		http.Error(w, "param error", http.StatusInternalServerError)
 		return
 	}
 
-	hostnames := flattenParams(req.Form["hostname"])
-	if hostnames == nil || len(hostnames) != 1 {
-		fmt.Fprintf(w, "notfqdn")
-		return
-	}
 	hostname := hostnames[0]
 	if !hostnameRegexp.MatchString(hostname) {
-		fmt.Fprintf(w, "notfqdn")
+		http.Error(w, "regexp error", http.StatusInternalServerError)
 		return
 	}
 
 	hello := &tls.ClientHelloInfo{ServerName: hostname}
 	cert, err := api.certmgr.GetCertificate(hello)
 	if err != nil {
-		fmt.Fprintf(w, "notfqdn")
+		http.Error(w, "cert error", http.StatusInternalServerError)
 		return
 	}
 
 	key, err := getPrivateKey(cert)
 	if err != nil {
-		fmt.Fprintf(w, "notfqdn")
+		http.Error(w, "private key error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/x-pem-file")
+	fmt.Fprintf(w, key)
+}
+
+func (api *API) v1certificate(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
+	err := req.ParseForm()
+	if err != nil {
+		http.Error(w, "parse error", http.StatusInternalServerError)
+	}
+
+	hostnames := req.Form["hostname"]
+	if len(hostnames) != 1 {
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
+	}
+
+	hostname := hostnames[0]
+	if !hostnameRegexp.MatchString(hostname) {
+		http.Error(w, "error", http.StatusInternalServerError)
+		return
+	}
+
+	hello := &tls.ClientHelloInfo{ServerName: hostname}
+	cert, err := api.certmgr.GetCertificate(hello)
+	if err != nil {
+		http.Error(w, "error", http.StatusInternalServerError)
 		return
 	}
 
 	certs, err := getCertificates(cert)
 	if err != nil {
-		fmt.Fprintf(w, "notfqdn")
+		http.Error(w, "error", http.StatusInternalServerError)
 		return
 	}
 
-	fmt.Fprintf(w, "private\n")
-	fmt.Fprintf(w, key)
-	fmt.Fprintf(w, "public\n")
+	w.Header().Set("Content-Type", "application/x-pem-file")
 	fmt.Fprintf(w, certs)
 }
 
@@ -228,6 +255,7 @@ func NewAPI(db Database) *API {
 	router := httprouter.New()
 	router.GET("/", api.index)
 	router.GET("/v1/update", api.v1update)
+	router.GET("/v1/privatekey", api.v1privatekey)
 	router.GET("/v1/certificate", api.v1certificate)
 	api.Handler = router
 

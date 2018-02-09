@@ -12,7 +12,6 @@ import (
 
 	"alley-oop/autocert"
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/crypto/acme"
 )
 
 type API struct {
@@ -259,9 +258,7 @@ func NewAPI(db Database) *API {
 	router.GET("/v1/certificate", api.v1certificate)
 	api.Handler = router
 
-	client := &acme.Client{DirectoryURL: "https://acme-staging.api.letsencrypt.org/directory"}
 	manager := autocert.Manager{
-		Client: client,
 		Cache:  dbCertCache{db},
 		Prompt: autocert.AcceptTOS,
 	}

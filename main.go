@@ -37,11 +37,14 @@ func main() {
 	api := NewAPI(db)
 	handler := api.Handler
 
+	// FIXME: We should have the host somewhere explicitly
+	hostname := config.DNS.NameServers[0]
 	m := autocert.Manager{
-		Cache:      autocert.DirCache("api-certs"),
+		Cache:      dbCertCache{db},
 		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist(config.DNS.Domain),
+		HostPolicy: autocert.HostWhitelist(hostname),
 	}
+
 	cfg := &tls.Config{
 		MinVersion:     tls.VersionTLS12,
 		GetCertificate: m.GetCertificate,

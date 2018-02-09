@@ -208,11 +208,11 @@ type dbCertCache struct {
 }
 
 func (db dbCertCache) Get(ctx context.Context, name string) ([]byte, error) {
-	b, err := db.GetCertificate(ctx, name)
-	if err == ErrCacheMiss {
+	bytes, err := db.GetCertificate(ctx, name)
+	if bytes == nil {
 		return nil, autocert.ErrCacheMiss
 	}
-	return b, err
+	return bytes, err
 }
 
 func (db dbCertCache) Put(ctx context.Context, name string, data []byte) error {

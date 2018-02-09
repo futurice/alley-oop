@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/gob"
-	"errors"
 	"io/ioutil"
 	"net"
 	"os"
@@ -18,8 +17,6 @@ const (
 )
 
 type FileDatabase string
-
-var ErrCacheMiss = errors.New("acme/autocert: certificate cache miss")
 
 func (db FileDatabase) getFile(ctx context.Context, name string) ([]byte, error) {
 	name = filepath.Join(string(db), name)
@@ -38,7 +35,7 @@ func (db FileDatabase) getFile(ctx context.Context, name string) ([]byte, error)
 	case <-done:
 	}
 	if os.IsNotExist(err) {
-		return nil, ErrCacheMiss
+		return nil, nil
 	}
 	return data, err
 }
@@ -138,8 +135,6 @@ func (db FileDatabase) DoesDomainExist(ctx context.Context, domain string) (bool
 	ipaddrs, err := db.GetIPAddresses(ctx, domain)
 	if err == nil {
 		hasIP = len(ipaddrs) > 0
-	} else if err == ErrCacheMiss {
-		hasIP = false
 	} else {
 		return false, err
 	}
@@ -147,8 +142,6 @@ func (db FileDatabase) DoesDomainExist(ctx context.Context, domain string) (bool
 	txtvals, err := db.GetTXTValues(ctx, domain)
 	if err == nil {
 		hasIP = len(txtvals) > 0
-	} else if err == ErrCacheMiss {
-		hasIP = false
 	} else {
 		return false, err
 	}
@@ -159,7 +152,7 @@ func (db FileDatabase) GetIPAddresses(ctx context.Context, domain string) ([]net
 	var addresses []net.IP
 
 	bytes, err := db.getFile(ctx, ipPrefix+domain)
-	if err != nil {
+	if bytes == nil {
 		return nil, err
 	}
 	if err := decodeFromGOB(bytes, &addresses); err != nil {
@@ -185,7 +178,7 @@ func (db FileDatabase) GetTXTValues(ctx context.Context, domain string) ([]strin
 	var values []string
 
 	bytes, err := db.getFile(ctx, txtPrefix+domain)
-	if err != nil {
+	if bytes == nil {
 		return nil, err
 	}
 	if err := decodeFromGOB(bytes, &values); err != nil {

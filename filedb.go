@@ -141,7 +141,7 @@ func (db FileDatabase) DoesDomainExist(ctx context.Context, domain string) (bool
 
 	txtvals, err := db.GetTXTValues(ctx, domain)
 	if err == nil {
-		hasIP = len(txtvals) > 0
+		hasTXT = len(txtvals) > 0
 	} else {
 		return false, err
 	}

@@ -62,6 +62,7 @@ func haveAddressesChanged(original []net.IP, updated []net.IP) bool {
 }
 
 func (api *API) index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	w.Header().Set("Cache-Control", "no-store, must-revalidate")
 	fmt.Fprintf(w, "Hello, world! You should be now using HTTPS!\n")
 }
 
@@ -71,6 +72,8 @@ func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.
 		myips     []string
 		ips       []net.IP
 	)
+
+	w.Header().Set("Cache-Control", "no-store, must-revalidate")
 
 	// Use timeout of 10 seconds, should be enough for all needed updates
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -175,6 +178,7 @@ func (api *API) v1privatekey(w http.ResponseWriter, req *http.Request, _ httprou
 	}
 
 	w.Header().Set("Content-Type", "application/x-pem-file")
+	w.Header().Set("Cache-Control", "no-store, must-revalidate")
 	fmt.Fprintf(w, key)
 }
 
@@ -210,6 +214,7 @@ func (api *API) v1certificate(w http.ResponseWriter, req *http.Request, _ httpro
 	}
 
 	w.Header().Set("Content-Type", "application/x-pem-file")
+	w.Header().Set("Cache-Control", "no-store, must-revalidate")
 	fmt.Fprintf(w, certs)
 }
 

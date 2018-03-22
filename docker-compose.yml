@@ -1,0 +1,13 @@
+version: "3"
+
+services:
+  alley-oop:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jvah/alley-oop:latest
+    ports:
+      - "80:80"
+      - "443:443"
+      - "53:53/tcp"
+      - "53:53/udp"

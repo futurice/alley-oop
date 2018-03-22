@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"alley-oop/autocert"
+	"github.com/jvah/alley-oop/autocert"
 	"github.com/BurntSushi/toml"
 )
 

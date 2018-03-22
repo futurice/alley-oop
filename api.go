@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"alley-oop/autocert"
+	"github.com/jvah/alley-oop/autocert"
 	"github.com/julienschmidt/httprouter"
 )
 

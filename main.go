@@ -55,7 +55,7 @@ func main() {
 	}
 
 	go func() {
-		handler := m.HTTPHandler(handler)
+		handler := m.HTTPHandler(nil)
 		fmt.Printf("Starting server at http://localhost:80.\n")
 		log.Fatal(http.ListenAndServe(":80", handler))
 	}()

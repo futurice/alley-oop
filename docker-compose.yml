@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: jvah/alley-oop:latest
+    image: futurice/alley-oop:latest
     ports:
       - "80:80"
       - "443:443"

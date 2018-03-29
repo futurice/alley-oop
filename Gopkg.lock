@@ -15,7 +15,7 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/jvah/alley-oop"
+  name = "github.com/futurice/alley-oop"
   packages = ["autocert"]
   revision = "f9305388177fe574dd6b05d8dd1670f5056ecd50"
 

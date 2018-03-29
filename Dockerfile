@@ -12,5 +12,6 @@ WORKDIR /root/
 
 COPY --from=builder /go/src/github.com/futurice/alley-oop .
 
-ENTRYPOINT ["./alley-oop"]
+VOLUME ["/etc/alley-oop", "/var/lib/alley-oop"]
+ENTRYPOINT ["./alley-oop", "/etc/alley-oop/config.cfg"]
 EXPOSE 53 53/udp 80 443

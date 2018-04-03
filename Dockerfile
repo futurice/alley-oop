@@ -11,6 +11,7 @@ FROM alpine:latest
 WORKDIR /root/
 
 COPY --from=builder /go/src/github.com/futurice/alley-oop .
+RUN apk --no-cache add ca-certificates && update-ca-certificates
 
 VOLUME ["/etc/alley-oop", "/var/lib/alley-oop"]
 ENTRYPOINT ["./alley-oop", "/etc/alley-oop/config.cfg"]

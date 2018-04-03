@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/futurice/alley-oop/autocert"
 	"github.com/BurntSushi/toml"
+	"github.com/futurice/alley-oop/autocert"
 )
 
 func fileExists(fname string) bool {
@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db := FileDatabase("data")
+	db := FileDatabase(config.DB.Directory)
 	api := NewAPI(db)
 	handler := api.Handler
 

@@ -23,10 +23,15 @@ type Database interface {
 
 type AlleyOopConfig struct {
 	DNS dnsConfig
+	DB  dbConfig
 }
 
 type dnsConfig struct {
 	Domain      string
 	NsAdmin     string
 	NameServers []string
+}
+
+type dbConfig struct {
+	Directory string
 }

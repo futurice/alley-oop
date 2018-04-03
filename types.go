@@ -22,8 +22,14 @@ type Database interface {
 }
 
 type AlleyOopConfig struct {
-	DNS dnsConfig
-	DB  dbConfig
+	Auth authConfig
+	DNS  dnsConfig
+	DB   dbConfig
+}
+
+type authConfig struct {
+	Username string
+	Password string
 }
 
 type dnsConfig struct {

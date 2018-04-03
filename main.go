@@ -34,7 +34,7 @@ func main() {
 	}
 
 	db := FileDatabase(config.DB.Directory)
-	api := NewAPI(db)
+	api := NewAPI(config.Auth, db)
 	handler := api.Handler
 
 	// FIXME: We should have the host somewhere explicitly

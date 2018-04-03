@@ -254,13 +254,33 @@ func (db dbCertCache) Delete(ctx context.Context, name string) error {
 	return db.DeleteCertificate(ctx, name)
 }
 
-func NewAPI(db Database) *API {
+func BasicAuth(h httprouter.Handle, requiredUser, requiredPassword string) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		// Get the Basic Authentication credentials
+		user, password, hasAuth := r.BasicAuth()
+
+		if hasAuth && user == requiredUser && password == requiredPassword {
+			// Delegate request to the given handle
+			h(w, r, ps)
+		} else {
+			// Request Basic Authentication otherwise
+			w.Header().Set("WWW-Authenticate", "Basic realm=Restricted")
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		}
+	}
+}
+
+func NewAPI(auth authConfig, db Database) *API {
+	authWrapper := func(h httprouter.Handle) httprouter.Handle {
+		return BasicAuth(h, auth.Username, auth.Password)
+	}
+
 	api := &API{db: db}
 	router := httprouter.New()
 	router.GET("/", api.index)
-	router.GET("/v1/update", api.v1update)
-	router.GET("/v1/privatekey", api.v1privatekey)
-	router.GET("/v1/certificate", api.v1certificate)
+	router.GET("/v1/update", authWrapper(api.v1update))
+	router.GET("/v1/privatekey", authWrapper(api.v1privatekey))
+	router.GET("/v1/certificate", authWrapper(api.v1certificate))
 	api.Handler = router
 
 	manager := autocert.Manager{

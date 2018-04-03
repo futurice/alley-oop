@@ -33,7 +33,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	db := FileDatabase("test-dir")
+	db := FileDatabase("data")
 	api := NewAPI(db)
 	handler := api.Handler
 
@@ -55,9 +55,9 @@ func main() {
 	}
 
 	go func() {
-		handler := m.HTTPHandler(nil)
+		certHandler := m.HTTPHandler(nil)
 		fmt.Printf("Starting server at http://localhost:80.\n")
-		log.Fatal(http.ListenAndServe(":80", handler))
+		log.Fatal(http.ListenAndServe(":80", certHandler))
 	}()
 
 	go func() {

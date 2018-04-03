@@ -1,10 +1,10 @@
 FROM golang:1.10.0-alpine AS builder
 LABEL maintainer="fiba@futurice.com"
 
-RUN apk add --update gcc musl-dev git
+RUN apk add --update git
 RUN go get github.com/futurice/alley-oop
 WORKDIR /go/src/github.com/futurice/alley-oop
-RUN CGO_ENABLED=1 go build
+RUN go build
 
 FROM alpine:latest
 

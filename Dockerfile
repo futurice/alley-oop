@@ -1,11 +1,18 @@
 FROM golang:1.10.0-alpine AS builder
 LABEL maintainer="fiba@futurice.com"
 
+# Install from git to satisfy dependencies etc:
 RUN apk add --update git
 RUN go get github.com/futurice/alley-oop
+
+# Overwrite with possible local changes (makes dev less painful):
+ADD . /go/src/github.com/futurice/alley-oop/
+
+# Build the binary:
 WORKDIR /go/src/github.com/futurice/alley-oop
 RUN go build
 
+# Start from a clean slate for the actual image:
 FROM alpine:latest
 
 WORKDIR /root/

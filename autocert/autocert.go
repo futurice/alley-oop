@@ -75,7 +75,7 @@ func HostWhitelist(hosts ...string) HostPolicy {
 	}
 	return func(_ context.Context, host string) error {
 		if !whitelist[host] {
-			return errors.New("acme/autocert: host not configured")
+			return errors.New("acme/autocert: host not configured: " + host)
 		}
 		return nil
 	}

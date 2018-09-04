@@ -16,6 +16,19 @@ func fileExists(fname string) bool {
 	return err == nil
 }
 
+func getConfig(configFile string) AlleyOopConfig {
+	var config AlleyOopConfig
+	if _, err := toml.DecodeFile(configFile, &config); err != nil {
+		fmt.Printf("Configuration file %s invalid: %s\n", configFile, err)
+		os.Exit(1)
+	}
+	// Use a sane default/minimum value
+	if config.DNS.RecordTTL < 300 {
+		config.DNS.RecordTTL = 300
+	}
+	return config
+}
+
 func main() {
 	if len(os.Args) != 2 {
 		fmt.Printf("Usage: %s <config>\n", os.Args[0])
@@ -27,11 +40,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var config AlleyOopConfig
-	if _, err := toml.DecodeFile(configFile, &config); err != nil {
-		fmt.Printf("Configuration file %s invalid: %s\n", configFile, err)
-		os.Exit(1)
-	}
+	config := getConfig(configFile)
 
 	db := FileDatabase(config.DB.Directory)
 	api := NewAPI(config.Auth, db)

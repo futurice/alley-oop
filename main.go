@@ -22,8 +22,7 @@ func getConfig(configFile string) AlleyOopConfig {
 		fmt.Printf("Configuration file %s invalid: %s\n", configFile, err)
 		os.Exit(1)
 	}
-	const MinimumTTL = 300
-	// Use a sane default/minimum value
+	const MinimumTTL = 300 // Use a sane default/minimum value
 	if config.DNS.RecordTTL < MinimumTTL {
 		config.DNS.RecordTTL = MinimumTTL
 	}

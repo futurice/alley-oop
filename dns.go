@@ -24,14 +24,14 @@ func getDomain(domain string) string {
 	return strings.ToLower(domain)
 }
 
-func getARecords(fqdn string, ipaddrs []net.IP) ([]dns.RR, error) {
+func getARecords(fqdn string, recordTTL int, ipaddrs []net.IP) ([]dns.RR, error) {
 	var records []dns.RR
 	for _, ip := range ipaddrs {
 		if !isIPv4(ip) {
 			// We just skip all the IPv6 addresses
 			continue
 		}
-		str := fmt.Sprintf("%s 300 IN A %s", fqdn, ip.String())
+		str := fmt.Sprintf("%s %d IN A %s", fqdn, recordTTL, ip.String())
 		rr, err := dns.NewRR(str)
 		if err != nil {
 			return nil, err
@@ -41,14 +41,14 @@ func getARecords(fqdn string, ipaddrs []net.IP) ([]dns.RR, error) {
 	return records, nil
 }
 
-func getAAAARecords(fqdn string, ipaddrs []net.IP) ([]dns.RR, error) {
+func getAAAARecords(fqdn string, recordTTL int, ipaddrs []net.IP) ([]dns.RR, error) {
 	var records []dns.RR
 	for _, ip := range ipaddrs {
 		if isIPv4(ip) {
 			// We just skip all the IPv4 addresses
 			continue
 		}
-		str := fmt.Sprintf("%s 300 IN AAAA %s", fqdn, ip.String())
+		str := fmt.Sprintf("%s %d IN AAAA %s", fqdn, recordTTL, ip.String())
 		rr, err := dns.NewRR(str)
 		if err != nil {
 			return nil, err
@@ -58,10 +58,10 @@ func getAAAARecords(fqdn string, ipaddrs []net.IP) ([]dns.RR, error) {
 	return records, nil
 }
 
-func getTXTRecords(fqdn string, values []string) ([]dns.RR, error) {
+func getTXTRecords(fqdn string, recordTTL int, values []string) ([]dns.RR, error) {
 	var records []dns.RR
 	for _, val := range values {
-		str := fmt.Sprintf("%s 300 IN TXT %s", fqdn, val)
+		str := fmt.Sprintf("%s %d IN TXT %s", fqdn, recordTTL, val)
 		rr, err := dns.NewRR(str)
 		if err != nil {
 			return nil, err
@@ -71,7 +71,7 @@ func getTXTRecords(fqdn string, values []string) ([]dns.RR, error) {
 	return records, nil
 }
 
-func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
+func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR, config dnsConfig) error {
 	var (
 		answer []dns.RR
 	)
@@ -89,15 +89,17 @@ func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
 		return err
 	}
 
+	recordTTL := config.RecordTTL
+
 	if q.Qtype == dns.TypeA || q.Qtype == dns.TypeAAAA {
 		ipaddrs, err := db.GetIPAddresses(ctx, domain)
 		if err != nil {
 			return err
 		}
 		if q.Qtype == dns.TypeA {
-			answer, err = getARecords(q.Name, ipaddrs)
+			answer, err = getARecords(q.Name, recordTTL, ipaddrs)
 		} else {
-			answer, err = getAAAARecords(q.Name, ipaddrs)
+			answer, err = getAAAARecords(q.Name, recordTTL, ipaddrs)
 		}
 		if err != nil {
 			return err
@@ -107,7 +109,7 @@ func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
 		if err != nil {
 			return err
 		}
-		answer, err = getTXTRecords(q.Name, txtvals)
+		answer, err = getTXTRecords(q.Name, recordTTL, txtvals)
 		if err != nil {
 			return err
 		}
@@ -131,7 +133,7 @@ func processQuery(db Database, msg *dns.Msg, soa dns.RR, ns []dns.RR) error {
 	return nil
 }
 
-func getHandler(db Database, domain string, nameservers []string) func(dns.ResponseWriter, *dns.Msg) {
+func getHandler(db Database, domain string, nameservers []string, config dnsConfig) func(dns.ResponseWriter, *dns.Msg) {
 	nshdr := dns.RR_Header{Name: domain, Rrtype: dns.TypeNS, Class: dns.ClassINET, Ttl: 3600}
 
 	var nsrr []dns.RR
@@ -156,7 +158,7 @@ func getHandler(db Database, domain string, nameservers []string) func(dns.Respo
 		msg.SetReply(req)
 
 		if req.Opcode == dns.OpcodeQuery {
-			if err := processQuery(db, msg, SOA, nsrr); err != nil {
+			if err := processQuery(db, msg, SOA, nsrr, config); err != nil {
 				// FIXME: Handle ServFail
 			}
 		}
@@ -172,7 +174,7 @@ func startDNS(db Database, config dnsConfig) {
 		nsfqdns = append(nsfqdns, dns.Fqdn(nsstr))
 	}
 
-	dns.HandleFunc(domain, getHandler(db, domain, nsfqdns))
+	dns.HandleFunc(domain, getHandler(db, domain, nsfqdns, config))
 	server := &dns.Server{Addr: ":53", Net: "udp"}
 
 	fmt.Printf("Starting DNS server at localhost:53\n")

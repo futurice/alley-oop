@@ -36,6 +36,7 @@ type dnsConfig struct {
 	Domain      string
 	NsAdmin     string
 	NameServers []string
+	RecordTTL   int
 }
 
 type dbConfig struct {

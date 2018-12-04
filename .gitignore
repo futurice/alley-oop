@@ -12,3 +12,11 @@
 
 # Project-local glide cache, RE: https://github.com/Masterminds/glide/issues/736
 .glide/
+
+# Usual repo clutter
+node_modules/
+npm-debug.log
+.env
+.DS_Store
+.history
+.vscode

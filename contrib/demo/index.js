@@ -52,11 +52,11 @@ function getKeyPair(hostname) {
   return Promise.all([
     fetchWithCache(
       `https://${SERVER_NAME}/v1/privatekey?hostname=${hostname}`,
-      `./${hostname}.key`,
+      `./cache/${hostname}.key`,
     ),
     fetchWithCache(
       `https://${SERVER_NAME}/v1/certificate?hostname=${hostname}`,
-      `./${hostname}.crt`,
+      `./cache/${hostname}.crt`,
     ),
   ]);
 }

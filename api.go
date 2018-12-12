@@ -63,7 +63,7 @@ func haveAddressesChanged(original []net.IP, updated []net.IP) bool {
 
 func (api *API) index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Cache-Control", "no-store, must-revalidate")
-	fmt.Fprintf(w, "Hello, world! You should be now using HTTPS!\n")
+	fmt.Fprintf(w, "alley-oop server is up\n")
 }
 
 func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {

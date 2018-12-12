@@ -17,34 +17,38 @@ You can obviously skip this step if you already have a server you can use, or do
 
 1. Create a new droplet
 1. Select Docker from One-click apps, for example:
-  ![DigitalOcean Docker app](doc/digitalocean-docker-app.png)
+    
+    ![DigitalOcean Docker app](doc/digitalocean-docker-app.png)
+    
 1. Even the cheapest droplet is plenty enough:
-  ![DigitalOcean droplet size](doc/digitalocean-droplet-size.png)
+    
+    ![DigitalOcean droplet size](doc/digitalocean-droplet-size.png)
+    
 1. Consider adding an SSH key already
 1. Choose a hostname, e.g. `alley-oop`
 1. Create the droplet, and wait for it to be provisioned
 
 #### Updating DNS records
 
-Now, we need to make the host accessible via a domain name.
+Now, we need to make the host accessible via a domain name. Using your DNS provider of choice (e.g. Hover, Amazon Route 53, etc):
 
-Using your DNS provider of choice (e.g. Hover, Amazon Route 53, etc), create a DNS record that points to the server you just created in the previous step:
+1. Create a DNS record that points to the server you just created in the previous step:
 
-```
-Name:  alley-oop.example.com
-Type:  A
-Value: <IP address of the server>
-TTL:   300
-```
+    ```
+    Name:  alley-oop.example.com
+    Type:  A
+    Value: <IP address of the server>
+    TTL:   300
+    ```
 
-Then, we need another record for our DNS server itself:
+1. Then, we need another record for our DNS server itself:
 
-```
-Name:  lan.example.com.
-Type:  NS
-Value: alley-oop.example.com
-TTL:   300
-```
+    ```
+    Name:  lan.example.com.
+    Type:  NS
+    Value: alley-oop.example.com
+    TTL:   300
+    ```
 
 Note that it might be tempting to have the `A` record name also be `lan.example.com`, but [due to DNS zone cuts](https://serverfault.com/a/779871), it's not possible.
 
@@ -55,20 +59,26 @@ We need to run a few commands on the host to make sure it can act as a DNS serve
 So SSH over, switch to `root`, and:
 
 1. Open up standard HTTP(S) & DNS ports on the firewall:
-  ```bash
-  ufw allow 80/tcp
-  ufw allow 443/tcp
-  ufw allow 53/tcp
-  ufw allow 53/udp
-  ```
+    
+    ```bash
+    ufw allow 80/tcp
+    ufw allow 443/tcp
+    ufw allow 53/tcp
+    ufw allow 53/udp
+    ```
+    
 1. Disable the local DNS server, so it doesn't conflict with our new DNS server (i.e. `alley-oop`):
-  ```bash
-  systemctl stop systemd-resolved.service
-  systemctl disable systemd-resolved.service
+    
+    ```bash
+    systemctl stop systemd-resolved.service
+    systemctl disable systemd-resolved.service
+    ```
+    
 1. Use Google's DNS for local name resolution (or any other DNS host you prefer):
-  ```bash
-  echo 'nameserver 8.8.8.8' > /etc/resolv.conf
-  ```
+    
+    ```bash
+    echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+    ```
 
 #### Running `alley-oop` server
 
@@ -111,9 +121,9 @@ This repository ships with a demo client, which you can use to verify your serve
 $ cd demo
 $ npm install
 ...
-$ DOMAIN_NAME=lan.example.com
-$ SERVER_NAME=alley-oop.example.com
-$ SERVER_PASSWORD=password
+$ export DOMAIN_NAME=lan.example.com
+$ export SERVER_NAME=alley-oop.example.com
+$ export SERVER_PASSWORD=password
 $ npm start
 Current configuration is:
 
@@ -155,4 +165,6 @@ startServer({
 1. Go on [GitHub](https://github.com/futurice/alley-oop/releases) and draft a new release with the format `v1.0.0`
 1. Ensure all docs have consistent example version (i.e. find & replace `1.0.0` in this doc)
 1. Go on [Docker Hub](https://hub.docker.com/r/futurice/alley-oop/~/settings/automated-builds/), update the tag name, save, and use the "Trigger" button:
-  ![Docker Hub build](doc/docker-hub-build.png)
+    
+    ![Docker Hub build](doc/docker-hub-build.png)
+    

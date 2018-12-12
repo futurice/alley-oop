@@ -1,19 +1,23 @@
 # Alley-Oop
 
-For information about what is an alley-oop, please refer to [this instructional
-video](https://www.youtube.com/watch?v=cpfCd9fWq04).
+An alley-oop is:
 
-In this context, Alley-Oop is a Dynamic DNS server that manages also fetching
-HTTPS certificates automatically for the domains, making it possible to use them
-in a local area network in addition to the public internet.
+1. _In basketball, a shot where a player throws the ball up toward the rack, [and another player grabs it mid-air and performs a slam dunk](https://www.youtube.com/watch?v=cpfCd9fWq04)._
+1. _In computer networking, a Dynamic DNS server with an integrated Let's Encrypt proxy, enabling easy HTTPS for web servers on a local network._
 
 ## Setup
 
-### Server setup
+This section describes getting a working demo set up. It uses `example.com` as the domain, but you should obviously **substitute that for your own domain** when going through the setup process.
 
-#### Creating a DigitalOcean droplet
+1. [Getting a virtual machine](#1-getting-a-virtual-machine)
+1. [Updating DNS records](#2-updating-dns-records)
+1. [Preparing the machine](#3-preparing-the-machine)
+1. [Running the alley-oop server](#4-running-the-alley-oop-server)
+1. [Running the demo client](#5-running-the-demo-client)
 
-You can obviously skip this step if you already have a server you can use, or do something similar on another VPS host (e.g. Amazon EC2).
+### 1. Getting a virtual machine
+
+This example will be creating a DigitalOcean droplet. You can of course **skip this step** if you already have a server you can use, or do something similar on another VPS host (e.g. Amazon EC2).
 
 1. Create a new droplet
 1. Select Docker from One-click apps, for example:
@@ -24,11 +28,11 @@ You can obviously skip this step if you already have a server you can use, or do
 
     ![DigitalOcean droplet size](doc/digitalocean-droplet-size.png)
 
-1. Consider adding an SSH key already
+1. Make sure your SSH will be added to the machine
 1. Choose a hostname, e.g. `alley-oop`
 1. Create the droplet, and wait for it to be provisioned
 
-#### Updating DNS records
+### 2. Updating DNS records
 
 Now, we need to make the host accessible via a domain name. Using your DNS provider of choice (e.g. Hover, Amazon Route 53, etc):
 
@@ -52,7 +56,7 @@ Now, we need to make the host accessible via a domain name. Using your DNS provi
 
 Note that it might be tempting to have the `A` record name also be `lan.example.com`, but [due to DNS zone cuts](https://serverfault.com/a/779871), it's not possible.
 
-#### Preparing the server
+### 3. Preparing the machine
 
 We need to run a few commands on the host to make sure it can act as a DNS server. Feel free to adapt these to your particulars if you're running on a different distro, for example.
 
@@ -80,7 +84,7 @@ So SSH over, switch to `root`, and:
     echo 'nameserver 8.8.8.8' > /etc/resolv.conf
     ```
 
-#### Running `alley-oop` server
+### 4. Running the `alley-oop` server
 
 Finally, we need to configure and run `alley-oop` itself.
 
@@ -99,12 +103,15 @@ recordttl = 300
 directory = "/var/lib/alley-oop"
 ```
 
-**Please change the password** to be a secret known only to you. Seriously.
+**Please change the password to be a secret known only to you.** Seriously.
 
 Now we're ready to pull and start the server itself:
 
 ```console
-$ docker run -p 80:80 -p 443:443 -p 53:53/tcp -p 53:53/udp -v "$(pwd)/alley-oop.cfg:/etc/alley-oop/config.cfg" --name alley-oop -d futurice/alley-oop:1.1.0
+$ docker run --name alley-oop -d \
+  -p 80:80 -p 443:443 -p 53:53/tcp -p 53:53/udp \
+  -v "$(pwd)/alley-oop.cfg:/etc/alley-oop/config.cfg" \
+  futurice/alley-oop:1.1.0
 ...
 $ docker logs -f alley-oop
 Starting server at http://localhost:443.
@@ -113,7 +120,7 @@ Starting server at http://localhost:80.
 ^C
 ```
 
-#### Running the demo client
+### 5. Running the demo client
 
 This repository ships with a demo client, which you can use to verify your server works as expected. Assuming you have a local IP address of `10.6.3.8`:
 

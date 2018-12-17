@@ -114,9 +114,10 @@ $ docker run --name alley-oop -d \
   futurice/alley-oop:1.1.2
 ...
 $ docker logs -f alley-oop
-Starting server at http://localhost:443.
+Starting alley-oop v1.1.2
+Starting server at http://localhost:443
 Starting DNS server at localhost:53
-Starting server at http://localhost:80.
+Starting server at http://localhost:80
 ^C
 ```
 

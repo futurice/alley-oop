@@ -3,7 +3,18 @@
 An alley-oop is:
 
 1. _In basketball, a shot where a player throws the ball up toward the rack, [and another player grabs it mid-air and performs a slam dunk](https://www.youtube.com/watch?v=cpfCd9fWq04)._
-1. _In computer networking, a Dynamic DNS server with an integrated Let's Encrypt proxy, enabling easy HTTPS for web servers on a local network._
+1. _In computer networking, a Dynamic DNS server with an integrated Let's Encrypt proxy, enabling easy HTTPS and WSS for web servers on a local network (LAN)._
+
+## How it works
+
+![How it works](doc/how-it-works.png)
+
+1. You app contacts the `alley-oop` API with a domain name and IP pair, e.g. `my-app.lan.example.com` and `192.168.1.123`. The API is HTTPS-only, and requires authentication.
+1. Let's Encrypt is asked to provision and verify an SSL certificate for the domain. The certificate and the corresponding private key are given to your app in the response.
+1. When a user attempts a connection to `https://my-app.lan.example.com`, its DNS resolver first goes to the DNS provider of your apex domain (`example.com`), e.g. [Gandi](https://www.gandi.net/), [Hover](https://www.hover.com/), [Route 53](https://aws.amazon.com/route53/), etc.
+1. The apex DNS provider tells the resolver that `lan.example.com` is managed by your `alley-oop` instance.
+1. Your `alley-oop` resolves the query for `my-app.lan.example.com` to the LAN address `192.168.1.123`.
+1. The user makes an HTTPS (or WSS) connection to your app within the LAN, and is greeted with a Let's Encrypt certificate that's valid for `https://my-app.lan.example.com`.
 
 ## Setup
 
@@ -34,7 +45,7 @@ This example will be creating a DigitalOcean droplet. You can of course **skip t
 
 ### 2. Updating DNS records
 
-Now, we need to make the host accessible via a domain name. Using your DNS provider of choice (e.g. Hover, Amazon Route 53, etc):
+Now, we need to make the host accessible via a domain name. Using your DNS provider of choice (e.g. [Gandi](https://www.gandi.net/), [Hover](https://www.hover.com/), [Route 53](https://aws.amazon.com/route53/), etc):
 
 1. Create a DNS record that points to the server you just created in the previous step:
 

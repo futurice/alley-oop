@@ -169,8 +169,8 @@ startServer({
 ## Release
 
 1. Make sure all changes are pushed to GitHub `master`
-1. Go on [GitHub](https://github.com/futurice/alley-oop/releases) and draft a new release with the format `v1.0.0`
-1. Ensure all docs have consistent example version (i.e. find & replace `1.0.0` in this doc)
+1. Go on [GitHub](https://github.com/futurice/alley-oop/releases) and draft a new release with the format `v1.1.0`
+1. Ensure all docs have consistent example version (i.e. find & replace `1.1.0` in this doc)
 1. Go on [Docker Hub](https://hub.docker.com/r/futurice/alley-oop/~/settings/automated-builds/), update the tag name, save, and use the "Trigger" button:
 
     ![Docker Hub build](doc/docker-hub-build.png)

@@ -63,9 +63,11 @@ func main() {
 		Handler:   handler,
 	}
 
+	fmt.Printf("Starting alley-oop v1.1.0\n")
+
 	go func() {
 		certHandler := m.HTTPHandler(nil)
-		fmt.Printf("Starting server at http://localhost:80.\n")
+		fmt.Printf("Starting server at http://localhost:80\n")
 		log.Fatal(http.ListenAndServe(":80", certHandler))
 	}()
 
@@ -73,6 +75,6 @@ func main() {
 		startDNS(db, config.DNS)
 	}()
 
-	fmt.Printf("Starting server at http://localhost:443.\n")
+	fmt.Printf("Starting server at http://localhost:443\n")
 	log.Fatal(srv.ListenAndServeTLS("", ""))
 }

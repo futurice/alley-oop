@@ -121,6 +121,13 @@ Starting server at http://localhost:80
 ^C
 ```
 
+To check that the server is responding over the network, at the correct address, and with a valid certificate of its own, try:
+
+```console
+$ curl https://alley-oop.example.com/
+alley-oop v1.1.2
+```
+
 ### 5. Running the demo client
 
 This repository ships with a demo client, which you can use to verify your server works as expected. Assuming you have a local IP address of `10.6.3.8`:

@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/futurice/alley-oop/autocert"
+	"github.com/futurice/alley-oop/src/autocert"
 )
 
 func fileExists(fname string) bool {

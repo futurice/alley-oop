@@ -10,7 +10,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/futurice/alley-oop/autocert"
+	"github.com/futurice/alley-oop/src/autocert"
 )
 
 func ExampleNewListener() {

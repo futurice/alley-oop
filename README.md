@@ -111,7 +111,7 @@ Now we're ready to pull and start the server itself:
 $ docker run --name alley-oop -d \
   -p 80:80 -p 443:443 -p 53:53/tcp -p 53:53/udp \
   -v "$(pwd)/alley-oop.cfg:/etc/alley-oop/config.cfg" \
-  futurice/alley-oop:1.1.1
+  futurice/alley-oop:1.1.2
 ...
 $ docker logs -f alley-oop
 Starting server at http://localhost:443.
@@ -168,9 +168,9 @@ startServer({
 
 ## Release
 
-1. Ensure all docs have consistent example version (i.e. find & replace `1.1.1` in this doc)
+1. Ensure all docs have consistent example version (i.e. find & replace `1.1.2` in this doc)
 1. Make sure all changes are pushed to GitHub `master`
-1. Go on [GitHub](https://github.com/futurice/alley-oop/releases) and draft a new release with the format `v1.1.1`
+1. Go on [GitHub](https://github.com/futurice/alley-oop/releases) and draft a new release with the format `v1.1.2`
 1. Go on [Docker Hub](https://hub.docker.com/r/futurice/alley-oop/~/settings/automated-builds/), update the tag name, save, and use the "Trigger" button:
 
     ![Docker Hub build](doc/docker-hub-build.png)

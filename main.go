@@ -63,7 +63,7 @@ func main() {
 		Handler:   handler,
 	}
 
-	fmt.Printf("Starting alley-oop v1.1.0\n")
+	fmt.Printf("Starting alley-oop v1.1.1\n")
 
 	go func() {
 		certHandler := m.HTTPHandler(nil)

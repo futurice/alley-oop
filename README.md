@@ -5,6 +5,15 @@ An alley-oop is:
 1. _In basketball, a shot where a player throws the ball up toward the rack, [and another player grabs it mid-air and performs a slam dunk](https://www.youtube.com/watch?v=cpfCd9fWq04)._
 1. _In computer networking, a Dynamic DNS server with an integrated Let's Encrypt proxy, enabling easy HTTPS and WSS for web servers on a local network (LAN)._
 
+## Sample use case
+
+Say you're running some data logger, IoT device or home automation gateway on your LAN. You want it to be reachable over HTTPS or WSS (WebSocket Secure) because:
+
+* You don't want other people on the same network to eavesdrop on you.
+* You don't want other devices on the same network to pretend to be your device.
+* If your device has a web UI for administration, you don't want scary "this is unsafe" banners in your browser. Also, some web platform features (such as Service Workers) are only available to sites served over HTTPS.
+* If you have a web UI hosted on the internet, served over HTTPS, which makes XHR requests to other devices on your LAN, those requests also have to be made over HTTPS (otherwise those requests will be blocked due to [mixed content rules](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content/How_to_fix_website_with_mixed_content) in modern browsers).
+
 ## How it works
 
 ![How it works](doc/how-it-works.png)

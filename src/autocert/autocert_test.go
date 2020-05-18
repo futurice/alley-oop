@@ -32,7 +32,7 @@ import (
 	"time"
 
 	"golang.org/x/crypto/acme"
-	"golang.org/x/crypto/acme/autocert/internal/acmetest"
+	"github.com/futurice/alley-oop/src/autocert/internal/acmetest"
 )
 
 var (

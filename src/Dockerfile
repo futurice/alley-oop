@@ -1,4 +1,4 @@
-FROM golang:1.10.0-alpine AS builder
+FROM golang:1.14.3-alpine3.11 AS builder
 LABEL maintainer="fiba@futurice.com"
 
 # Install from git to satisfy dependencies etc:
@@ -13,7 +13,7 @@ WORKDIR /go/src/github.com/futurice/alley-oop/src
 RUN go build
 
 # Start from a clean slate for the actual image:
-FROM alpine:latest
+FROM alpine:3.11
 
 WORKDIR /root/
 

@@ -22,9 +22,10 @@ type Database interface {
 }
 
 type AlleyOopConfig struct {
-	Auth authConfig
-	DNS  dnsConfig
-	DB   dbConfig
+	Auth 	  authConfig
+	DNS  	  dnsConfig
+	DB   	  dbConfig
+	Contact contactConfig
 }
 
 type authConfig struct {
@@ -41,4 +42,8 @@ type dnsConfig struct {
 
 type dbConfig struct {
 	Directory string
+}
+
+type contactConfig struct {
+	Email	string
 }

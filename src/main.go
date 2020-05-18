@@ -52,6 +52,7 @@ func main() {
 		Cache:      dbCertCache{db},
 		Prompt:     autocert.AcceptTOS,
 		HostPolicy: autocert.HostWhitelist(hostname),
+		Email: 		  config.Contact.Email,
 	}
 
 	cfg := &tls.Config{

@@ -37,6 +37,8 @@ import (
 
 // DefaultACMEDirectory is the default ACME Directory URL used when the Manager's Client is nil.
 const DefaultACMEDirectory = "https://acme-v02.api.letsencrypt.org/directory"
+// Use staging endpoint for testing:
+// "https://acme-staging-v02.api.letsencrypt.org/directory"
 
 // createCertRetryAfter is how much time to wait before removing a failed state
 // entry due to an unsuccessful createCert call.
@@ -825,13 +827,16 @@ AuthorizeOrderLoop:
 			// Respond to the challenge and wait for validation result.
 			cleanup, err := m.fulfill(ctx, client, chal, domain)
 			if err != nil {
+				fmt.Printf("fulfill error: %v\n", err)
 				continue AuthorizeOrderLoop
 			}
 			defer cleanup()
 			if _, err := client.Accept(ctx, chal); err != nil {
+				fmt.Printf("Accept error: %v\n", err)
 				continue AuthorizeOrderLoop
 			}
 			if _, err := client.WaitAuthorization(ctx, z.URI); err != nil {
+				fmt.Printf("WaitAuthorization error: %v\n", err)
 				continue AuthorizeOrderLoop
 			}
 		}

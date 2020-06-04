@@ -63,7 +63,7 @@ func haveAddressesChanged(original []net.IP, updated []net.IP) bool {
 
 func (api *API) index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Cache-Control", "no-store, must-revalidate")
-	fmt.Fprintf(w, "alley-oop v1.1.2\n")
+	fmt.Fprintf(w, "alley-oop v2.0.0\n")
 }
 
 func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {

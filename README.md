@@ -14,6 +14,10 @@ Say you're running some data logger, IoT device or home automation gateway on yo
 - If your device has a web UI for administration, you don't want scary "this is unsafe" banners in your browser. Also, some web platform features (such as Service Workers) are only available to sites served over HTTPS.
 - If you have a web UI hosted on the internet, served over HTTPS, which makes XHR requests to other devices on your LAN, those requests also have to be made over HTTPS (otherwise those requests will be blocked due to [mixed content rules](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content/How_to_fix_website_with_mixed_content) in modern browsers).
 
+## Features
+
+The major release 2.0.0 of `alley-oop` now supports [ACMEv2/RFC 8555](https://tools.ietf.org/html/rfc8555) with `dns-01` challenge. `dns-01` challenge has to be used to get certificates for private IPs. ACMEv1 is [being deprecatedt](https://community.letsencrypt.org/t/end-of-life-plan-for-acmev1/88430) and should not be used anymore.
+
 ## How it works
 
 ![How it works](doc/how-it-works.png)

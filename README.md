@@ -16,7 +16,7 @@ Say you're running some data logger, IoT device or home automation gateway on yo
 
 ## Features
 
-The major release 2.0.0 of `alley-oop` now supports [ACMEv2/RFC 8555](https://tools.ietf.org/html/rfc8555) with `dns-01` challenge. `dns-01` challenge has to be used to get certificates for private IPs. ACMEv1 is [being deprecatedt](https://community.letsencrypt.org/t/end-of-life-plan-for-acmev1/88430) and should not be used anymore.
+The major release 2.0.0 of `alley-oop` now supports [ACMEv2/RFC 8555](https://tools.ietf.org/html/rfc8555) with `dns-01` challenge. `dns-01` challenge has to be used to get certificates for private IPs. ACMEv1 is [being deprecated](https://community.letsencrypt.org/t/end-of-life-plan-for-acmev1/88430) and should not be used anymore.
 
 ## How it works
 

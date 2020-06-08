@@ -9,10 +9,14 @@ An alley-oop is:
 
 Say you're running some data logger, IoT device or home automation gateway on your LAN. You want it to be reachable over HTTPS or WSS (WebSocket Secure) because:
 
-* You don't want other people on the same network to eavesdrop on you.
-* You don't want other devices on the same network to pretend to be your device.
-* If your device has a web UI for administration, you don't want scary "this is unsafe" banners in your browser. Also, some web platform features (such as Service Workers) are only available to sites served over HTTPS.
-* If you have a web UI hosted on the internet, served over HTTPS, which makes XHR requests to other devices on your LAN, those requests also have to be made over HTTPS (otherwise those requests will be blocked due to [mixed content rules](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content/How_to_fix_website_with_mixed_content) in modern browsers).
+- You don't want other people on the same network to eavesdrop on you.
+- You don't want other devices on the same network to pretend to be your device.
+- If your device has a web UI for administration, you don't want scary "this is unsafe" banners in your browser. Also, some web platform features (such as Service Workers) are only available to sites served over HTTPS.
+- If you have a web UI hosted on the internet, served over HTTPS, which makes XHR requests to other devices on your LAN, those requests also have to be made over HTTPS (otherwise those requests will be blocked due to [mixed content rules](https://developer.mozilla.org/en-US/docs/Web/Security/Mixed_content/How_to_fix_website_with_mixed_content) in modern browsers).
+
+## Features
+
+The major release 2.0.0 of `alley-oop` now supports [ACMEv2/RFC 8555](https://tools.ietf.org/html/rfc8555) with `dns-01` challenge. `dns-01` challenge has to be used to get certificates for private IPs. ACMEv1 is [being deprecatedt](https://community.letsencrypt.org/t/end-of-life-plan-for-acmev1/88430) and should not be used anymore.
 
 ## How it works
 
@@ -42,11 +46,11 @@ This example will be creating a DigitalOcean droplet. You can of course **skip t
 1. Create a new droplet
 1. Select Docker from One-click apps, for example:
 
-    ![DigitalOcean Docker app](doc/digitalocean-docker-app.png)
+   ![DigitalOcean Docker app](doc/digitalocean-docker-app.png)
 
 1. Even the cheapest droplet is plenty enough:
 
-    ![DigitalOcean droplet size](doc/digitalocean-droplet-size.png)
+   ![DigitalOcean droplet size](doc/digitalocean-droplet-size.png)
 
 1. Make sure your SSH will be added to the machine
 1. Choose a hostname, e.g. `alley-oop`
@@ -58,21 +62,21 @@ Now, we need to make the host accessible via a domain name. Using your DNS provi
 
 1. Create a DNS record that points to the server you just created in the previous step:
 
-    ```
-    Name:  alley-oop.example.com
-    Type:  A
-    Value: <IP address of the server>
-    TTL:   300
-    ```
+   ```
+   Name:  alley-oop.example.com
+   Type:  A
+   Value: <IP address of the server>
+   TTL:   300
+   ```
 
 1. Then, we need another record for our DNS server itself:
 
-    ```
-    Name:  lan.example.com.
-    Type:  NS
-    Value: alley-oop.example.com
-    TTL:   300
-    ```
+   ```
+   Name:  lan.example.com.
+   Type:  NS
+   Value: alley-oop.example.com
+   TTL:   300
+   ```
 
 Note that it might be tempting to have the `A` record name also be `lan.example.com`, but [due to DNS zone cuts](https://serverfault.com/a/779871), it's not possible.
 
@@ -84,25 +88,25 @@ So SSH over, switch to `root`, and:
 
 1. Open up standard HTTP(S) & DNS ports on the firewall:
 
-    ```bash
-    ufw allow 80/tcp
-    ufw allow 443/tcp
-    ufw allow 53/tcp
-    ufw allow 53/udp
-    ```
+   ```bash
+   ufw allow 80/tcp
+   ufw allow 443/tcp
+   ufw allow 53/tcp
+   ufw allow 53/udp
+   ```
 
 1. Disable the local DNS server, so it doesn't conflict with our new DNS server (i.e. `alley-oop`):
 
-    ```bash
-    systemctl stop systemd-resolved.service
-    systemctl disable systemd-resolved.service
-    ```
+   ```bash
+   systemctl stop systemd-resolved.service
+   systemctl disable systemd-resolved.service
+   ```
 
 1. Use Google's DNS for local name resolution (or any other DNS host you prefer):
 
-    ```bash
-    echo 'nameserver 8.8.8.8' > /etc/resolv.conf
-    ```
+   ```bash
+   echo 'nameserver 8.8.8.8' > /etc/resolv.conf
+   ```
 
 ### 4. Running the `alley-oop` server
 
@@ -131,10 +135,10 @@ Now we're ready to pull and start the server itself:
 $ docker run --name alley-oop -d \
   -p 80:80 -p 443:443 -p 53:53/tcp -p 53:53/udp \
   -v "$(pwd)/alley-oop.cfg:/etc/alley-oop/config.cfg" \
-  futurice/alley-oop:1.1.2
+  futurice/alley-oop:2.0.0
 ...
 $ docker logs -f alley-oop
-Starting alley-oop v1.1.2
+Starting alley-oop v2.0.0
 Starting server at http://localhost:443
 Starting DNS server at localhost:53
 Starting server at http://localhost:80
@@ -145,7 +149,7 @@ To check that the server is responding over the network, at the correct address,
 
 ```console
 $ curl https://alley-oop.example.com/
-alley-oop v1.1.2
+alley-oop v2.0.0
 ```
 
 ### 5. Running the demo client
@@ -190,16 +194,15 @@ The demo client will register a DNS name for each private IP address available o
 
 ```js
 startServer({
-  'my-app.lan.example.com': '192.168.1.123',
+  "my-app.lan.example.com": "192.168.1.123",
 });
 ```
 
 ## Release
 
-1. Ensure all docs have consistent example version (i.e. find & replace `1.1.2` in this repo)
+1. Ensure all docs have consistent example version (i.e. find & replace `2.0.0` in this repo)
 1. Make sure all changes are pushed to GitHub `master`
-1. Go on [GitHub](https://github.com/futurice/alley-oop/releases) and draft a new release with the format `v1.1.2`
+1. Go on [GitHub](https://github.com/futurice/alley-oop/releases) and draft a new release with the format `v2.0.0`
 1. Go on [Docker Hub](https://hub.docker.com/r/futurice/alley-oop/~/settings/automated-builds/), update the tag name, save, and use the "Trigger" button:
 
-    ![Docker Hub build](doc/docker-hub-build.png)
-
+   ![Docker Hub build](doc/docker-hub-build.png)

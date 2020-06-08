@@ -63,7 +63,7 @@ func haveAddressesChanged(original []net.IP, updated []net.IP) bool {
 
 func (api *API) index(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	w.Header().Set("Cache-Control", "no-store, must-revalidate")
-	fmt.Fprintf(w, "alley-oop v1.1.2\n")
+	fmt.Fprintf(w, "alley-oop v2.0.0\n")
 }
 
 func (api *API) v1update(w http.ResponseWriter, req *http.Request, _ httprouter.Params) {
@@ -167,13 +167,15 @@ func (api *API) v1privatekey(w http.ResponseWriter, req *http.Request, _ httprou
 	hello := &tls.ClientHelloInfo{ServerName: hostname}
 	cert, err := api.certmgr.GetCertificate(hello)
 	if err != nil {
-		http.Error(w, "cert error", http.StatusInternalServerError)
+		newErr := fmt.Errorf("GetCertificate failed with error: %v", err)
+		http.Error(w, newErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	key, err := getPrivateKey(cert)
 	if err != nil {
-		http.Error(w, "private key error", http.StatusInternalServerError)
+		newErr := fmt.Errorf("getPrivateKey failed with error: %v", err)
+		http.Error(w, newErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -203,13 +205,15 @@ func (api *API) v1certificate(w http.ResponseWriter, req *http.Request, _ httpro
 	hello := &tls.ClientHelloInfo{ServerName: hostname}
 	cert, err := api.certmgr.GetCertificate(hello)
 	if err != nil {
-		http.Error(w, "error", http.StatusInternalServerError)
+		newErr := fmt.Errorf("GetCertificate failed with error: %v", err)
+		http.Error(w, newErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	certs, err := getCertificates(cert)
 	if err != nil {
-		http.Error(w, "error", http.StatusInternalServerError)
+		newErr := fmt.Errorf("getCertificates failed with error: %v", err)
+		http.Error(w,newErr.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -225,12 +229,14 @@ type dbTxtHandler struct {
 func (db dbTxtHandler) PutTXTRecord(ctx context.Context, domain string, value string) {
 	if err := db.PutTXTValues(ctx, domain, []string{value}); err != nil {
 		// FIXME: Handle error
+		fmt.Printf("PutTXTValues failed with error: %v", err)
 	}
 }
 
 func (db dbTxtHandler) DeleteTXTRecord(ctx context.Context, domain string) {
 	if err := db.DeleteTXTValues(ctx, domain); err != nil {
 		// FIXME: Handle error
+		fmt.Printf("DeleteTXTValues failed with error: %v", err)
 	}
 }
 
